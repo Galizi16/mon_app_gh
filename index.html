@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HOTEL FOLKESTONE OPERA - Dashboard</title>
+    <link rel="stylesheet" href="styles.css">
+    <!-- Librairie pour lire les fichiers Excel -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+</head>
+<body data-theme="dark">
+    <div class="container">
+        <header id="appHeader">
+            <div class="logo-container">
+                <img src="logo.svg" alt="Logo HOTEL FOLKESTONE OPERA" id="logo">
+                <h1>HOTEL FOLKESTONE OPERA</h1>
+            </div>
+            <div class="header-controls">
+                <button id="refreshButton" title="Réinitialiser l'application">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="18" height="18"><path d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6s-2.69 6-6 6-6-2.69-6-6H4c0 4.42 3.58 8 8 8s8-3.58 8-8-3.58-8-8-8z"/></svg>
+                    Rafraîchir
+                </button>
+                <button id="themeToggle" title="Changer de thème">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="18" height="18"><path d="M12 3c-4.97 0-9 4.03-9 9s4.03 9 9 9 9-4.03 9-9c0-.46-.04-.92-.1-1.36-.98 1.37-2.58 2.26-4.4 2.26-2.98 0-5.4-2.42-5.4-5.4 0-1.81.89-3.42 2.26-4.4-.44-.06-.9-.1-1.36-.1z"/></svg>
+                    Thème Clair
+                </button>
+            </div>
+        </header>
+
+        <main>
+            <!-- Zone de messages -->
+            <div id="messageArea" class="message-area" aria-live="polite"></div>
+
+            <!-- Chargement des fichiers -->
+            <section id="fileLoader" class="card">
+                <h2>Chargement des Données</h2>
+                <div id="fileInputs">
+                    <div class="file-input-wrapper">
+                        <label for="tariffFileInput" class="file-label">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="16" height="16"><path d="M9 16h6v-6h4l-7-7-7 7h4zm-4 2h14v2H5z"/></svg>
+                            Tarifs (.xlsx)
+                        </label>
+                        <input type="file" id="tariffFileInput" accept=".xlsx, .xls" data-type="tariffs">
+                        <span class="file-status" id="tariffFileStatus"></span>
+                    </div>
+                    <div class="file-input-wrapper">
+                        <label for="availabilityFileInput" class="file-label">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="16" height="16"><path d="M9 16h6v-6h4l-7-7-7 7h4zm-4 2h14v2H5z"/></svg>
+                            Disponibilités (.xlsx)
+                        </label>
+                        <input type="file" id="availabilityFileInput" accept=".xlsx, .xls" data-type="availability">
+                         <span class="file-status" id="availabilityFileStatus"></span>
+                    </div>
+                    <div class="file-input-wrapper">
+                        <label for="staffFileInput" class="file-label">
+                           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="16" height="16"><path d="M9 16h6v-6h4l-7-7-7 7h4zm-4 2h14v2H5z"/></svg>
+                            Personnel (.xlsx)
+                        </label>
+                        <input type="file" id="staffFileInput" accept=".xlsx, .xls" data-type="staff">
+                         <span class="file-status" id="staffFileStatus"></span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Sections Fonctionnelles -->
+            <div id="sections">
+                <!-- Check My Price -->
+                <section class="card">
+                    <div class="card-header">
+                        <h2>Check My Price</h2>
+                        <button class="reloadButton" data-input-id="tariffFileInput" title="Recharger le fichier Tarifs">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="16" height="16"><path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>
+                        </button>
+                    </div>
+                    <form id="reservationForm">
+                        <div class="form-grid">
+                            <div>
+                                <label for="dateSelectionMode">Mode de sélection :</label>
+                                <select id="dateSelectionMode">
+                                    <option value="nights">Arrivée + Nuits</option>
+                                    <option value="departure">Arrivée + Départ</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label for="arrivalDate">Date d'arrivée :</label>
+                                <input type="date" id="arrivalDate" required>
+                            </div>
+                            <div id="nightsInput">
+                                <label for="numberOfNights">Nombre de nuits :</label>
+                                <input type="number" id="numberOfNights" min="1" value="1" required>
+                            </div>
+                            <div id="departureInput" style="display: none;">
+                                <label for="departureDate">Date de départ :</label>
+                                <input type="date" id="departureDate" required>
+                            </div>
+                             <div>
+                                <label for="roomType">Type de chambre :</label>
+                                <select id="roomType" required disabled>
+                                    <option value="">Charger fichier tarifs</option>
+                                </select>
+                            </div>
+                             <div>
+                                <label for="tariffPlan">Plan tarifaire :</label>
+                                <select id="tariffPlan" required disabled>
+                                     <option value="">Choisir chambre d'abord</option>
+                                </select>
+                            </div>
+                             <div>
+                                <label for="discount">Remise (%) :</label>
+                                <input type="number" id="discount" min="0" max="100" step="1" value="0">
+                            </div>
+                        </div>
+                        <button type="submit" class="cta-button">
+                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="18" height="18"><path d="M7 18c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2zm10 0c-1.1 0-1.99.9-1.99 2s.89 2 1.99 2 2-.9 2-2-.9-2-2-2zm-1.45-5c.75 0 1.41-.41 1.75-1.03l3.58-6.49c.37-.67-.11-1.48-.87-1.48H5.21l-.94-2H1v2h2l3.6 7.59L5.25 14.03c-.16.28-.25.61-.25.97 0 1.1.9 2 2 2h10v-2H7.42c-.14 0-.25-.11-.25-.25l.03-.12.9-1.63h7.45z"/></svg>
+                             Calculer le prix
+                        </button>
+                    </form>
+                    <div class="results" id="tariffResults" style="display: none;" aria-live="polite">
+                        <h3>Détails du séjour</h3>
+                        <div class="table-container">
+                            <table id="priceTable">
+                                <thead><tr><th>Date</th><th>Prix avant remise</th><th>Prix après remise</th></tr></thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+                        <div class="summary-grid">
+                             <p><strong>Total séjour :</strong> <span id="totalPrice">0</span> €</p>
+                             <p><strong>Remise appliquée :</strong> <span id="discountAmount">0</span> €</p>
+                             <p><strong>Total après remise :</strong> <span id="totalAfterDiscount">0</span> €</p>
+                             <p><strong>Prix moyen / nuit :</strong> <span id="averagePrice">0</span> €</p>
+                        </div>
+                        <p id="summaryText" class="summary-text"></p>
+                    </div>
+                </section>
+
+                <!-- Check My Hotel -->
+                <section class="card">
+                     <div class="card-header">
+                        <h2>Check My Hotel</h2>
+                        <button class="reloadButton" data-input-id="availabilityFileInput" title="Recharger le fichier Disponibilités">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="16" height="16"><path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>
+                        </button>
+                    </div>
+                    <div class="form-inline">
+                        <label for="singleDay">Sélectionner une date :</label>
+                        <input type="date" id="singleDay">
+                    </div>
+                    <div id="dashboard" class="results" aria-live="polite">
+                        <p>Sélectionnez une date et chargez le fichier Disponibilités.</p>
+                    </div>
+                </section>
+
+                <!-- Check My Staff -->
+                <section class="card">
+                     <div class="card-header">
+                        <h2>Check My Staff</h2>
+                        <button class="reloadButton" data-input-id="staffFileInput" title="Recharger le fichier Personnel">
+                           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="16" height="16"><path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>
+                        </button>
+                    </div>
+                     <div class="form-grid">
+                        <div>
+                            <label for="staffDate">Sélectionner une date :</label>
+                            <input type="date" id="staffDate">
+                        </div>
+                        <div>
+                            <label for="serviceFilter">Filtrer par service :</label>
+                            <select id="serviceFilter" disabled>
+                                <option value="">Tous les services</option>
+                                <option value="">Charger fichier personnel</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div id="staffResults" class="results" aria-live="polite">
+                         <p>Sélectionnez une date et chargez le fichier Personnel.</p>
+                    </div>
+                </section>
+            </div>
+        </main>
+
+        <footer>
+            <!-- Optionnel: Ajouter un pied de page si nécessaire -->
+        </footer>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
